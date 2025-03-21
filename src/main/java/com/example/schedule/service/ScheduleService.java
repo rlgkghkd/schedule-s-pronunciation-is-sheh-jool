@@ -11,4 +11,5 @@ public interface ScheduleService {
 
     List<ScheduleResponseDto> getSchedule(Long id, String todo, String name, Date writeDate, Date rewriteDate);
     ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto);
+    void deleteSchedule(Long id, ScheduleRequestDto dto);
 }

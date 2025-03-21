@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -48,7 +49,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
 
 
     @Override
-    public List<ScheduleResponseDto> getSchedule(Long id, String todo, String name, Date writeDate, Date rewriteDate) {
+    public List<Schedule> getSchedule(Long id, String todo, String name, Date writeDate, Date rewriteDate) {
 
         String sqlQuery="select * from schedule where 1=1";
         sqlQuery= id==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and ID = ?";
@@ -59,25 +60,33 @@ public class ScheduleRepositortImp implements ScheduleRepository{
 
         List<Schedule> scheduleList= jdbcTemplate.query(sqlQuery, scheduleRowMapper(), id,todo, name, writeDate, rewriteDate);
         if (scheduleList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
-        return scheduleList.stream().map(ScheduleResponseDto::new).toList();
+        return scheduleList.stream().toList();
     }
 
     @Override
-    public ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto) {
-        List<Schedule> searchedSchedule= jdbcTemplate.query("select * from schedule where id= ?", scheduleRowMapper(), id);
-        ScheduleResponseDto searchedScheduleDto= new ScheduleResponseDto(searchedSchedule.stream().findAny().orElseThrow());
-        if (!Objects.equals(dto.getPassword(), searchedScheduleDto.getId())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
+    public int updateSchedule(Long id, ScheduleRequestDto dto) {
+        Schedule searchedSchedule= jdbcTemplate.query("select * from schedule where id= ?",  scheduleRowMapper(), id).get(0);
+        if (!Objects.equals(dto.getPassword(), searchedSchedule.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
 
-        if (dto.getTodo() != null){jdbcTemplate.update("update schedule set TODO= ?", dto.getTodo());}
-        if (dto.getName() != null){jdbcTemplate.update("update schedule set NAME= ?", dto.getName());}
-        return jdbcTemplate.update(sqlQuery);
+        Date now= new Date();
+        int index=0;
+        if (dto.getTodo() != null){index=jdbcTemplate.update("update schedule set TODO= ? , REWRITE_DATE = ? where id= ?", dto.getTodo(),now, id);}
+        if (dto.getName() != null){index=jdbcTemplate.update("update schedule set NAME= ? , REWRITE_DATE = ? where id= ?", dto.getName(),now, id);}
+        return index;
+    }
+
+    @Override
+    public int deleteSchedule(Long id, ScheduleRequestDto dto) {
+        Schedule searchedSchedule= jdbcTemplate.query("select * from schedule where id= ?",  scheduleRowMapper(), id).get(0);
+        if (!Objects.equals(dto.getPassword(), searchedSchedule.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
+        return jdbcTemplate.update("delete from schedule where id= ?", id);
     }
 
     public RowMapper<Schedule> scheduleRowMapper(){
         return new RowMapper<Schedule>() {
             @Override
             public Schedule mapRow(ResultSet rs, int rowNum) throws SQLException {
-                return new Schedule(rs.getLong("ID"), rs.getString("TODO"), rs.getString("NAME"), rs.getDate("WRITE_DATE"), rs.getDate("REWRITE_DATE"));
+                return new Schedule(rs.getLong("ID"), rs.getString("TODO"), rs.getString("NAME"), rs.getLong("PASSWORD"), rs.getDate("WRITE_DATE"), rs.getDate("REWRITE_DATE"));
             }
         };
     }

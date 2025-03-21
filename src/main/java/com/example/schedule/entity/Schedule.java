@@ -15,14 +15,6 @@ public class Schedule {
     private Date writeDate;
     private Date rewriteDate;
 
-    public Schedule(long id, String todo, String name, java.sql.Date writeDate, java.sql.Date rewriteDate) {
-        this.id =id;
-        this.todo= todo;
-        this.name= name;
-        this.writeDate= writeDate;
-        this.rewriteDate= rewriteDate;
-    }
-
     public Schedule(Schedule schedule){
         this.id = getId();
         this.todo= getTodo();
