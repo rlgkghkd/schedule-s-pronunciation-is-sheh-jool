@@ -9,18 +9,17 @@ import java.util.Date;
 @AllArgsConstructor
 public class Schedule {
     private Long id;
-    private String todo;
-    private String name;
-    private Long password;
-    private Date writeDate;
-    private Date rewriteDate;
+    private Long userId;
+    private String plan;
+    private Date createdDate;
+    private Date editedDate;
 
     public Schedule(Schedule schedule){
-        this.id = getId();
-        this.todo= getTodo();
-        this.name= getName();
-        this.writeDate= getWriteDate();
-        this.rewriteDate= getRewriteDate();
+        this.id = schedule.getId();
+        this.userId= schedule.getUserId();
+        this.plan= schedule.getPlan();
+        this.createdDate = schedule.getCreatedDate();
+        this.editedDate = schedule.getEditedDate();
     }
 }
 
