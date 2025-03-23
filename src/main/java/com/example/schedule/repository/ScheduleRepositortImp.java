@@ -2,6 +2,8 @@ package com.example.schedule.repository;
 
 import com.example.schedule.dto.ScheduleRequestDto;
 import com.example.schedule.dto.ScheduleResponseDto;
+import com.example.schedule.dto.UserRequestDto;
+import com.example.schedule.dto.UserResponseDto;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Slf4j
@@ -29,10 +32,28 @@ public class ScheduleRepositortImp implements ScheduleRepository{
     }
 
     @Override
+    public UserResponseDto createUser(UserRequestDto dto) {
+        SimpleJdbcInsert simpleJdbcInsert= new SimpleJdbcInsert(jdbcTemplate);
+        simpleJdbcInsert.withTableName("user").usingGeneratedKeyColumns("USER_ID");
+
+        Map<String, Object> param= new HashMap<>();
+        Date now= new Date();
+
+        param.put("userName", dto.getUserName());
+        param.put("userMail", dto.getUserMail());
+        param.put("registedDate", now);
+        param.put("editedDate", now);
+        param.put("password", dto.getPassword());
+
+        Number key= simpleJdbcInsert.executeAndReturnKey(new MapSqlParameterSource(param));
+        return new UserResponseDto(key.longValue(), dto.getUserName(), dto.getUserMail(), now, now);
+    }
+
+    @Override
     public ScheduleResponseDto createSchedule(ScheduleRequestDto dto) {
 
         SimpleJdbcInsert simpleJdbcInsert= new SimpleJdbcInsert(jdbcTemplate);
-        simpleJdbcInsert.withTableName("schedule").usingGeneratedKeyColumns("id");
+        simpleJdbcInsert.withTableName("schedule").usingGeneratedKeyColumns("ID");
 
         Map<String, Object> param= new HashMap<>();
         Date now= new Date();
@@ -70,17 +91,35 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         sqlQuery= id==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and ID = ?";
         sqlQuery= plan ==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and PLAN = ?";
         sqlQuery= userId==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and USER_ID = ?";
-        sqlQuery= createdDate==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and WRITE_DATE = ?";
-        sqlQuery= editedDate==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and REWRITE_DATE = ?";
+        sqlQuery= createdDate==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and DATE_FORMAT(CREATED_DATE, '%Y-%m-%d') = ?";
+        sqlQuery= editedDate==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and DATE_FORMAT(EDITED_DATE, '%Y-%m-%d') = ?";
+        System.out.println(createdDate +" "+ editedDate);
+        System.out.println(sqlQuery);
 
-        List<Schedule> scheduleList= jdbcTemplate.query(sqlQuery, scheduleRowMapper(), id, plan, userId, createdDate, editedDate);
+        String created= createdDate==null?null: new SimpleDateFormat("yyyy-MM-dd").format(createdDate);
+        String edited= editedDate==null?null:new SimpleDateFormat("yyyy-MM-dd").format(editedDate);
+
+        List<Schedule> scheduleList= jdbcTemplate.query(sqlQuery, scheduleRowMapper(), id, plan, userId, created, edited);
         if (scheduleList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
         return scheduleList;
     }
 
     @Override
+    public int updateUser(Long id, UserRequestDto dto) {
+        User user= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0);
+        if (!Objects.equals(dto.getPassword(), user.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
+
+        Date now= new Date();
+        int index=0;
+        if (dto.getUserName() != null){index=jdbcTemplate.update("update user set USER_NAME= ? , EDITED_DATE = ? where USER_ID= ?", dto.getUserName(),now, id);}
+        if (dto.getUserMail() != null){index=jdbcTemplate.update("update user set USER_MAIL= ? , EDITED_DATE = ? where USER_ID= ?", dto.getUserMail(),now, id);}
+        System.out.println(index);
+        return index;
+    }
+
+    @Override
     public int updateSchedule(Long id, ScheduleRequestDto dto) {
-        User user= jdbcTemplate.query("select * from user where USER_ID = (select USER_ID from schedule where id= ?)", userRowMapper(), id).get(0);
+        User user= jdbcTemplate.query("select * from user where USER_ID = (select USER_ID from schedule where USER_ID= ?)", userRowMapper(), id).get(0);
         if (!Objects.equals(dto.getPassword(), user.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
 
         Date now= new Date();
@@ -88,6 +127,13 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         if (dto.getPlan() != null){index=jdbcTemplate.update("update schedule set PLAN= ? , EDITED_DATE = ? where id= ?", dto.getPlan(),now, id);}
         if (dto.getUserId() != null){index=jdbcTemplate.update("update schedule set USER_ID= ? , EDITED_DATE = ? where id= ?", dto.getUserId(),now, id);}
         return index;
+    }
+
+    @Override
+    public int deleteUser(Long id, UserRequestDto dto) {
+        String schedulePassword= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0).getPassword();
+        if (!schedulePassword.equals(dto.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
+        return jdbcTemplate.update("delete from user where USER_ID= ?", id);
     }
 
     @Override
@@ -101,7 +147,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return new RowMapper<User>() {
             @Override
             public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-                return new User(rs.getLong("USER_ID"), rs.getString("USER_NAME"), rs.getString("USER_MAIL"), rs.getDate("REGISTE_DATE"), rs.getDate("EDITED_DATE"), rs.getString("PASSWORD"));
+                return new User(rs.getLong("USER_ID"), rs.getString("USER_NAME"), rs.getString("USER_MAIL"), rs.getDate("REGISTED_DATE"), rs.getDate("EDITED_DATE"), rs.getString("PASSWORD"));
             }
         };
     }

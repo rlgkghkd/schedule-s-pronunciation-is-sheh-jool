@@ -2,6 +2,7 @@ package com.example.schedule.service;
 
 import com.example.schedule.dto.ScheduleRequestDto;
 import com.example.schedule.dto.ScheduleResponseDto;
+import com.example.schedule.dto.UserRequestDto;
 import com.example.schedule.dto.UserResponseDto;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
@@ -29,6 +30,11 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
+    public UserResponseDto createUser(UserRequestDto dto) {
+        return scheduleRepository.createUser(dto);
+    }
+
+    @Override
     public List<UserResponseDto> getUser(Long userId, String userName) {
         return scheduleRepository.getUser(userId, userName).stream().map(UserResponseDto::new).toList();
     }
@@ -44,6 +50,12 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
+    public UserResponseDto updateUser(Long id, UserRequestDto dto) {
+        scheduleRepository.updateUser(id, dto);
+        return new UserResponseDto(scheduleRepository.getUser(id, null).get(0));
+    }
+
+    @Override
     public ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto) {
         scheduleRepository.updateSchedule(id, dto);
         Schedule schedule= scheduleRepository.getSchedule(id, null, null, null, null).get(0);
@@ -52,9 +64,12 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
+    public void deleteUser(Long id, UserRequestDto dto) {
+        scheduleRepository.deleteUser(id, dto);
+    }
+
+    @Override
     public void deleteSchedule(Long id, ScheduleRequestDto dto) {
         scheduleRepository.deleteSchedule(id, dto);
-        if (id== 0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
     }
 }
