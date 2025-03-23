@@ -1,17 +1,17 @@
-# schedule-s-pronunciation-is-sheh-jool
+# schedule-s-pronunciation-is-sheh-joolg
 
 스케줄 관리 API입니다.
 + 스케줄 관리
-  + 생성
-  + 삭제
-  + 수정
-  + 조회
+    + 생성
+    + 삭제
+    + 수정
+    + 조회
 + 유저 관리
-  + 생성
-  + 삭제
-  + 수정
-  + 조회
-
+    + 생성
+    + 삭제
+    + 수정
+    + 조회
+ 
 의 기능을 지원합니다.
 
 스케줄은 사용자에 종속됩니다.
