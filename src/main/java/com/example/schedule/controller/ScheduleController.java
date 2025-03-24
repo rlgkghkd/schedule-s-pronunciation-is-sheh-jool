@@ -4,8 +4,11 @@ import com.example.schedule.dto.ScheduleRequestDto;
 import com.example.schedule.dto.ScheduleResponseDto;
 import com.example.schedule.dto.UserRequestDto;
 import com.example.schedule.dto.UserResponseDto;
+import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import com.example.schedule.service.ScheduleService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.relational.core.sql.Assignment;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,14 +45,22 @@ public class ScheduleController {
             @RequestParam(value = "plan", required = false) String plan,
             @RequestParam(value = "userId", required = false) Long userId,
             @RequestParam(value = "createdDate", required = false)@DateTimeFormat(pattern = "yyyy-MM-dd")Date createdDate,
-            @RequestParam(value = "editedDate", required = false)@DateTimeFormat(pattern = "yyyy-MM-dd")Date editedDate
+            @RequestParam(value = "editedDate", required = false)@DateTimeFormat(pattern = "yyyy-MM-dd")Date editedDate,
+            @RequestParam(value = "pageIndex") int pageIndex
             ){
-            return new ResponseEntity<>(scheduleService.getSchedule(id, plan, userId, createdDate, editedDate), HttpStatus.FOUND);
+        List<ScheduleResponseDto> returnedList = scheduleService.getSchedule(id, plan, userId, createdDate, editedDate);
+        Page<ScheduleResponseDto> page=  scheduleService.pagingSchedule(returnedList, pageIndex, 2);
+        return new ResponseEntity<>(page.stream().toList(), HttpStatus.FOUND);
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<UserResponseDto>> getSchedule(@RequestParam(value = "userId", required = false) Long userId, @RequestParam(value = "userName", required = false) String userName){
-        return new ResponseEntity<>(scheduleService.getUser(userId, userName), HttpStatus.FOUND);
+    public ResponseEntity<List<UserResponseDto>> getUser(
+            @RequestParam(value = "userId", required = false) Long userId,
+            @RequestParam(value = "userName", required = false) String userName,
+            @RequestParam(value = "pageIndex") int pageIndex){
+        List<UserResponseDto> returnedList = scheduleService.getUser(userId, userName);
+        Page<UserResponseDto> page=  scheduleService.pagingUser(returnedList, pageIndex, 2);
+        return new ResponseEntity<>(page.stream().toList(), HttpStatus.FOUND);
     }
 
     @PatchMapping("/user/{id}")

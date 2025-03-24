@@ -7,6 +7,9 @@ import com.example.schedule.dto.UserResponseDto;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import com.example.schedule.repository.ScheduleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,7 +39,9 @@ public class ScheduleServiceImp implements ScheduleService{
 
     @Override
     public List<UserResponseDto> getUser(Long userId, String userName) {
-        return scheduleRepository.getUser(userId, userName).stream().map(UserResponseDto::new).toList();
+        List<UserResponseDto> returnList=scheduleRepository.getUser(userId, userName).stream().map(UserResponseDto::new).toList();
+        if (returnList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
+        return returnList;
     }
 
     @Override
@@ -46,18 +51,22 @@ public class ScheduleServiceImp implements ScheduleService{
         for (Schedule s: scheduleList){
             returnList.add(new ScheduleResponseDto(s, scheduleRepository.getUser(s.getUserId(), null).get(0).getUserName()));
         }
+        if (returnList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
         return returnList;
     }
 
     @Override
     public UserResponseDto updateUser(Long id, UserRequestDto dto) {
-        scheduleRepository.updateUser(id, dto);
+
+        int amount= scheduleRepository.updateUser(id, dto);
+        if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
         return new UserResponseDto(scheduleRepository.getUser(id, null).get(0));
     }
 
     @Override
     public ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto) {
-        scheduleRepository.updateSchedule(id, dto);
+        int amount=scheduleRepository.updateSchedule(id, dto);
+        if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
         Schedule schedule= scheduleRepository.getSchedule(id, null, null, null, null).get(0);
         User user= scheduleRepository.getUser(dto.getUserId(), null).get(0);
         return new ScheduleResponseDto(schedule, user.getUserName());
@@ -65,11 +74,29 @@ public class ScheduleServiceImp implements ScheduleService{
 
     @Override
     public void deleteUser(Long id, UserRequestDto dto) {
-        scheduleRepository.deleteUser(id, dto);
+       int amount= scheduleRepository.deleteUser(id, dto);
+        if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
     }
 
     @Override
     public void deleteSchedule(Long id, ScheduleRequestDto dto) {
-        scheduleRepository.deleteSchedule(id, dto);
+        int amount= scheduleRepository.deleteSchedule(id, dto);
+        if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
+    }
+
+    @Override
+    public Page<UserResponseDto> pagingUser(List<UserResponseDto> list, int pageIndex, int pageSize) {
+        int start= Math.min((pageIndex -1) * pageSize, list.size()-1);
+        int end= Math.min(start + pageSize, list.size());
+        List <UserResponseDto> paged= list.subList(start, end);
+        return new PageImpl<>(paged,PageRequest.of((pageIndex -1), pageSize), list.size());
+    }
+
+    @Override
+    public Page<ScheduleResponseDto> pagingSchedule(List<ScheduleResponseDto> list, int pageIndex, int pageSize) {
+        int start= Math.min((pageIndex -1) * pageSize, list.size()-1);
+        int end= Math.min(start + pageSize, list.size());
+        List <ScheduleResponseDto> paged= list.subList(start, end);
+        return new PageImpl<>(paged,PageRequest.of((pageIndex -1), pageSize), list.size());
     }
 }

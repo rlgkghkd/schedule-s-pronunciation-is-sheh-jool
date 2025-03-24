@@ -4,6 +4,7 @@ import com.example.schedule.dto.ScheduleRequestDto;
 import com.example.schedule.dto.ScheduleResponseDto;
 import com.example.schedule.dto.UserRequestDto;
 import com.example.schedule.dto.UserResponseDto;
+import org.springframework.data.domain.Page;
 
 import java.util.Date;
 import java.util.List;
@@ -17,4 +18,6 @@ public interface ScheduleService {
     ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto);
     void deleteUser(Long id, UserRequestDto dto);
     void deleteSchedule(Long id, ScheduleRequestDto dto);
+    Page <UserResponseDto> pagingUser(List<UserResponseDto> list, int pageIndex, int pageSize);
+    Page<ScheduleResponseDto> pagingSchedule(List<ScheduleResponseDto> list, int pageIndex, int pageSize);
 }
