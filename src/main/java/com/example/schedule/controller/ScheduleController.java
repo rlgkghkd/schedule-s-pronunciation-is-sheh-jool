@@ -7,6 +7,7 @@ import com.example.schedule.dto.UserResponseDto;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import com.example.schedule.service.ScheduleService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.relational.core.sql.Assignment;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,23 +31,23 @@ public class ScheduleController {
 
 
     @PostMapping
-    public ResponseEntity<ScheduleResponseDto> createSchedule(@RequestBody ScheduleRequestDto dto){
+    public ResponseEntity<ScheduleResponseDto> createSchedule(@Valid @RequestBody ScheduleRequestDto dto){
         return new ResponseEntity<>(scheduleService.createSchedule(dto), HttpStatus.CREATED);
     }
 
     @PostMapping("/user")
-    public ResponseEntity<UserResponseDto> createUser(@RequestBody UserRequestDto dto){
+    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserRequestDto dto){
         return new ResponseEntity<>(scheduleService.createUser(dto), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<ScheduleResponseDto>> getSchedule(
-            @RequestParam(value = "id", required = false) Long id,
+            @Valid @RequestParam(value = "id", required = false) Long id,
             @RequestParam(value = "plan", required = false) String plan,
             @RequestParam(value = "userId", required = false) Long userId,
             @RequestParam(value = "createdDate", required = false)@DateTimeFormat(pattern = "yyyy-MM-dd")Date createdDate,
             @RequestParam(value = "editedDate", required = false)@DateTimeFormat(pattern = "yyyy-MM-dd")Date editedDate,
-            @RequestParam(value = "pageIndex") int pageIndex
+            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex
             ){
         List<ScheduleResponseDto> returnedList = scheduleService.getSchedule(id, plan, userId, createdDate, editedDate);
         Page<ScheduleResponseDto> page=  scheduleService.pagingSchedule(returnedList, pageIndex, 2);
