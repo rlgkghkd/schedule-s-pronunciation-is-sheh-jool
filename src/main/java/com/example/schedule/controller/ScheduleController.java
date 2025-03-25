@@ -1,19 +1,17 @@
 package com.example.schedule.controller;
 
-import com.example.schedule.dto.ScheduleRequestDto;
-import com.example.schedule.dto.ScheduleResponseDto;
-import com.example.schedule.dto.UserRequestDto;
-import com.example.schedule.dto.UserResponseDto;
-import com.example.schedule.entity.Schedule;
-import com.example.schedule.entity.User;
+import com.example.schedule.dto.*;
 import com.example.schedule.service.ScheduleService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.relational.core.sql.Assignment;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 import java.util.List;
@@ -21,6 +19,7 @@ import java.util.List;
 // 뷰 안쓰니까 Rest
 @RestController
 @RequestMapping("/schedule")
+@Slf4j
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
@@ -31,12 +30,20 @@ public class ScheduleController {
 
 
     @PostMapping
-    public ResponseEntity<ScheduleResponseDto> createSchedule(@Valid @RequestBody ScheduleRequestDto dto){
+    public ResponseEntity<ScheduleResponseDto> createSchedule(@Validated @RequestBody ScheduleCreateRequestDto dto, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
         return new ResponseEntity<>(scheduleService.createSchedule(dto), HttpStatus.CREATED);
     }
 
     @PostMapping("/user")
-    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserRequestDto dto){
+    public ResponseEntity<UserResponseDto> createUser(@Validated @RequestBody UserCreateRequestDto dto, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
         return new ResponseEntity<>(scheduleService.createUser(dto), HttpStatus.CREATED);
     }
 
@@ -65,22 +72,32 @@ public class ScheduleController {
     }
 
     @PatchMapping("/user/{id}")
-    public ResponseEntity<UserResponseDto> patchUser(@PathVariable Long id, @RequestBody UserRequestDto dto){
+    public ResponseEntity<UserResponseDto> patchUser(@PathVariable Long id, @Validated @RequestBody UserUpdateRequestDto dto, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
         return new ResponseEntity<>(scheduleService.updateUser(id, dto), HttpStatus.OK);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ScheduleResponseDto> patchSchedule(@PathVariable Long id, @RequestBody ScheduleRequestDto dto){
+    public ResponseEntity<ScheduleResponseDto> patchSchedule(@PathVariable Long id, @Validated @RequestBody ScheduleUpdateRequestDto dto, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
         return new ResponseEntity<>(scheduleService.updateSchedule(id, dto), HttpStatus.OK);
     }
 
     @DeleteMapping("/user/{id}")
-    public  void  deleteUser(@PathVariable Long id, @RequestBody UserRequestDto dto){
+    public  void  deleteUser(@PathVariable Long id, @RequestBody UserCreateRequestDto dto){
+        if (id == 0){ throw new ResponseStatusException(HttpStatus.BAD_REQUEST);}
         scheduleService.deleteUser(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    public  void  deleteSchedule(@PathVariable Long id, @RequestBody ScheduleRequestDto dto){
+    public  void  deleteSchedule(@PathVariable Long id, @RequestBody ScheduleCreateRequestDto dto){
+        if (id == 0){ throw new ResponseStatusException(HttpStatus.BAD_REQUEST);}
         scheduleService.deleteSchedule(id, dto);
     }
 }

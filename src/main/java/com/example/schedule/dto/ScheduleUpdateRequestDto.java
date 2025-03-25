@@ -6,13 +6,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 @Getter
-public class ScheduleRequestDto {
+public class ScheduleUpdateRequestDto {
 
     @Size(max=200)
-    @NotEmpty
     private String plan;
-    @NotNull
     private Long userId;
     @NotEmpty
+    @NotNull
     private String password;
 }

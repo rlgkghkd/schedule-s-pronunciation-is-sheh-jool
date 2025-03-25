@@ -1,9 +1,6 @@
 package com.example.schedule.repository;
 
-import com.example.schedule.dto.ScheduleRequestDto;
-import com.example.schedule.dto.ScheduleResponseDto;
-import com.example.schedule.dto.UserRequestDto;
-import com.example.schedule.dto.UserResponseDto;
+import com.example.schedule.dto.*;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +29,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
     }
 
     @Override
-    public UserResponseDto createUser(UserRequestDto dto) {
+    public UserResponseDto createUser(UserCreateRequestDto dto) {
         SimpleJdbcInsert simpleJdbcInsert= new SimpleJdbcInsert(jdbcTemplate);
         simpleJdbcInsert.withTableName("user").usingGeneratedKeyColumns("USER_ID");
 
@@ -50,7 +47,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
     }
 
     @Override
-    public ScheduleResponseDto createSchedule(ScheduleRequestDto dto) {
+    public ScheduleResponseDto createSchedule(ScheduleCreateRequestDto dto) {
 
         SimpleJdbcInsert simpleJdbcInsert= new SimpleJdbcInsert(jdbcTemplate);
         simpleJdbcInsert.withTableName("schedule").usingGeneratedKeyColumns("ID");
@@ -105,7 +102,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
     }
 
     @Override
-    public int updateUser(Long id, UserRequestDto dto) {
+    public int updateUser(Long id, UserUpdateRequestDto dto) {
         User user= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0);
         if (!Objects.equals(dto.getPassword(), user.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
 
@@ -113,13 +110,12 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         int index=0;
         if (dto.getUserName() != null){index=jdbcTemplate.update("update user set USER_NAME= ? , EDITED_DATE = ? where USER_ID= ?", dto.getUserName(),now, id);}
         if (dto.getUserMail() != null){index=jdbcTemplate.update("update user set USER_MAIL= ? , EDITED_DATE = ? where USER_ID= ?", dto.getUserMail(),now, id);}
-        System.out.println(index);
         return index;
     }
 
     @Override
-    public int updateSchedule(Long id, ScheduleRequestDto dto) {
-        User user= jdbcTemplate.query("select * from user where USER_ID = (select USER_ID from schedule where USER_ID= ?)", userRowMapper(), id).get(0);
+    public int updateSchedule(Long id, ScheduleUpdateRequestDto dto) {
+        User user= jdbcTemplate.query("select * from user where USER_ID = (select USER_ID from schedule where ID= ?)", userRowMapper(), id).get(0);
         if (!Objects.equals(dto.getPassword(), user.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
 
         Date now= new Date();
@@ -130,14 +126,14 @@ public class ScheduleRepositortImp implements ScheduleRepository{
     }
 
     @Override
-    public int deleteUser(Long id, UserRequestDto dto) {
+    public int deleteUser(Long id, UserCreateRequestDto dto) {
         String schedulePassword= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0).getPassword();
         if (!schedulePassword.equals(dto.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
         return jdbcTemplate.update("delete from user where USER_ID= ?", id);
     }
 
     @Override
-    public int deleteSchedule(Long id, ScheduleRequestDto dto) {
+    public int deleteSchedule(Long id, ScheduleCreateRequestDto dto) {
         String schedulePassword= jdbcTemplate.query("select * from user where USER_ID = (SELECT USER_ID from schedule where ID = ?)", userRowMapper(), id).get(0).getPassword();
         if (!schedulePassword.equals(dto.getPassword())){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}
         return jdbcTemplate.update("delete from schedule where id= ?", id);

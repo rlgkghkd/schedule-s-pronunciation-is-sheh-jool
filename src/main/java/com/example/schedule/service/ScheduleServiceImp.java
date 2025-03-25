@@ -1,9 +1,6 @@
 package com.example.schedule.service;
 
-import com.example.schedule.dto.ScheduleRequestDto;
-import com.example.schedule.dto.ScheduleResponseDto;
-import com.example.schedule.dto.UserRequestDto;
-import com.example.schedule.dto.UserResponseDto;
+import com.example.schedule.dto.*;
 import com.example.schedule.entity.Schedule;
 import com.example.schedule.entity.User;
 import com.example.schedule.repository.ScheduleRepository;
@@ -28,12 +25,12 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
-    public ScheduleResponseDto createSchedule(ScheduleRequestDto dto) {
+    public ScheduleResponseDto createSchedule(ScheduleCreateRequestDto dto) {
         return scheduleRepository.createSchedule(dto);
     }
 
     @Override
-    public UserResponseDto createUser(UserRequestDto dto) {
+    public UserResponseDto createUser(UserCreateRequestDto dto) {
         return scheduleRepository.createUser(dto);
     }
 
@@ -56,7 +53,7 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
-    public UserResponseDto updateUser(Long id, UserRequestDto dto) {
+    public UserResponseDto updateUser(Long id, UserUpdateRequestDto dto) {
 
         int amount= scheduleRepository.updateUser(id, dto);
         if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
@@ -64,7 +61,7 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
-    public ScheduleResponseDto updateSchedule(Long id, ScheduleRequestDto dto) {
+    public ScheduleResponseDto updateSchedule(Long id, ScheduleUpdateRequestDto dto) {
         int amount=scheduleRepository.updateSchedule(id, dto);
         if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
         Schedule schedule= scheduleRepository.getSchedule(id, null, null, null, null).get(0);
@@ -73,13 +70,13 @@ public class ScheduleServiceImp implements ScheduleService{
     }
 
     @Override
-    public void deleteUser(Long id, UserRequestDto dto) {
+    public void deleteUser(Long id, UserCreateRequestDto dto) {
        int amount= scheduleRepository.deleteUser(id, dto);
         if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
     }
 
     @Override
-    public void deleteSchedule(Long id, ScheduleRequestDto dto) {
+    public void deleteSchedule(Long id, ScheduleCreateRequestDto dto) {
         int amount= scheduleRepository.deleteSchedule(id, dto);
         if (amount==0){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
     }
