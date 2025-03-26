@@ -3,11 +3,14 @@ package com.example.schedule.controller;
 import com.example.schedule.dto.*;
 import com.example.schedule.service.ScheduleService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +36,10 @@ public class ScheduleController {
     // ScheduleCreateDto 양식을 통해 생성, 반환은 ScheduleResponseDto
     // userId는 user테이블에서 이미 생성된 유저의 id만 사용 가능, password는 user테이블에 user가 가진 password를 등록해야 함.
     @PostMapping
-    public ResponseEntity<ScheduleResponseDto> createSchedule(@Validated @RequestBody ScheduleCreateRequestDto dto, BindingResult bindingResult){
+    public Object createSchedule(@Validated @RequestBody ScheduleCreateRequestDto dto, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            return bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
         }
         return new ResponseEntity<>(scheduleService.createSchedule(dto), HttpStatus.CREATED);
     }
@@ -44,10 +47,10 @@ public class ScheduleController {
     // 유저 생성
     // UserCreateDto 양식을 통해 생성, 반환은 UserResponseDto
     @PostMapping("/user")
-    public ResponseEntity<UserResponseDto> createUser(@Validated @RequestBody UserCreateRequestDto dto, BindingResult bindingResult){
+    public Object createUser(@Validated @RequestBody UserCreateRequestDto dto, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            return bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
         }
         return new ResponseEntity<>(scheduleService.createUser(dto), HttpStatus.CREATED);
     }
@@ -90,10 +93,10 @@ public class ScheduleController {
     // UserUpdateRequestDto 사용
     // password를 제외한 값들은 필수값이 아님.
     @PatchMapping("/user/{id}")
-    public ResponseEntity<UserResponseDto> patchUser(@PathVariable Long id, @Validated @RequestBody UserUpdateRequestDto dto, BindingResult bindingResult){
+    public Object patchUser(@PathVariable Long id, @Validated @RequestBody UserUpdateRequestDto dto, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            return bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
         }
         return new ResponseEntity<>(scheduleService.updateUser(id, dto), HttpStatus.OK);
     }
@@ -103,10 +106,10 @@ public class ScheduleController {
     // password를 제외한 값들은 필수값이 아님. password는 수정 전 스케줄 소유 유저의 password
     // 수정할 userId는 user 테이블에 이미 존재하는 값만 사용 가능
     @PatchMapping("/{id}")
-    public ResponseEntity<ScheduleResponseDto> patchSchedule(@PathVariable Long id, @Validated @RequestBody ScheduleUpdateRequestDto dto, BindingResult bindingResult){
+    public Object patchSchedule(@PathVariable Long id, @Validated @RequestBody ScheduleUpdateRequestDto dto, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             log.info("errors={}", bindingResult.getAllErrors().get(0).getDefaultMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            return bindingResult.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
         }
         return new ResponseEntity<>(scheduleService.updateSchedule(id, dto), HttpStatus.OK);
     }

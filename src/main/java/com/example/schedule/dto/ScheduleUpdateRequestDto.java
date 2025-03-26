@@ -8,10 +8,10 @@ import lombok.Getter;
 @Getter
 public class ScheduleUpdateRequestDto {
 
-    @Size(max=200)
+    @Size(max=200, message = "200자 이하로 작성해주세요.")
     private String plan;
     private Long userId;
-    @NotEmpty
-    @NotNull
+    @NotEmpty(message = "password는 공백일 수 없습니다.")
+    @NotNull(message = "password는 null일 수 없습니다.")
     private String password;
 }
