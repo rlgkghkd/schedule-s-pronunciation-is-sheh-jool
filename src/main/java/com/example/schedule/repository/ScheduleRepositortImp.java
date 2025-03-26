@@ -22,12 +22,17 @@ import java.util.*;
 @Repository
 public class ScheduleRepositortImp implements ScheduleRepository{
 
+    // JdbcTemplate 싱글톤
     private final JdbcTemplate jdbcTemplate;
-
     public ScheduleRepositortImp(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // 유저 생성
+    // 생성된 데이터는 user테이블에 삽입됨.
+    // dto에서 받은 이름, 메일, 비밀번호를 사용
+    // userId는 자동생성, 날짜는 현재 날짜 메서드 사용
+    // UserResponseDto 객체를 만들어 반환
     @Override
     public UserResponseDto createUser(UserCreateRequestDto dto) {
         SimpleJdbcInsert simpleJdbcInsert= new SimpleJdbcInsert(jdbcTemplate);
@@ -46,6 +51,11 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return new UserResponseDto(key.longValue(), dto.getUserName(), dto.getUserMail(), now, now);
     }
 
+    // 스케줄 생성
+    // 생성된 데이터는 schedule 테이블에 삽입됨
+    // userId, plan을 dto에서 받아 사용. userId는 user테이블의 USER_ID 외래키. user테이블에 없는 값은 sql 에러 발생
+    // id는 자동생성, 날짜는 현재날짜 메서드
+    // ScheduleResponseDto 객체를 반환. 반환시 유저 이름은 user테이블에서 USER_NAME 참조.
     @Override
     public ScheduleResponseDto createSchedule(ScheduleCreateRequestDto dto) {
 
@@ -68,22 +78,29 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return new ScheduleResponseDto(key.longValue(), user.getUserId(), user.getUserName(), dto.getPlan(), now, now);
     }
 
+    // 유저 검색
+    // 들어오는 파라미터에 따라 sql 쿼리 문자열을 만들어나감
+    // 완성된 쿼리를 jdbcTemplate 쿼리 메서드에 전달.
+    // 완성된 리스트를 dto 방식으로 매핑해 전달
     @Override
-    public List<User> getUser(Long userId, String userName) {
+    public List<UserResponseDto> getUser(Long userId, String userName) {
         String sqlQuery="select * from user where 1=1";
         sqlQuery= userId==null?sqlQuery+" and 1 is Not ?": sqlQuery+" and USER_ID = ?";
         sqlQuery= userName==null?sqlQuery+" and 1 is Not ?": sqlQuery+" and USER_NAME = ?";
         System.out.println(sqlQuery);
-
-
         List<User> userList= jdbcTemplate.query(sqlQuery, userRowMapper(), userId, userName);
         if (userList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
-        return userList;
+        return userList.stream().map(UserResponseDto::new).toList();
     }
 
 
+    // 스케줄 검색
+    // 들어오는 파라미터에 따라 sql 쿼리 문자열을 만들어나감
+    // 완성된 쿼리를 jdbcTemplate 쿼리 메서드에 전달.
+    // 완성된 리스트와 user 테이블에서 USER_NAME을 참조하여 ScheduleResponseDto 방식으로 매핑
+    // 완성된 dto 리스트를 전달.
     @Override
-    public List<Schedule> getSchedule(Long id, String plan, Long userId, Date createdDate, Date editedDate) {
+    public List<ScheduleResponseDto> getSchedule(Long id, String plan, Long userId, Date createdDate, Date editedDate) {
         String sqlQuery="select * from schedule where 1=1";
         sqlQuery= id==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and ID = ?";
         sqlQuery= plan ==null?sqlQuery+" and 1 is Not ?":sqlQuery+" and PLAN = ?";
@@ -96,11 +113,22 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         String created= createdDate==null?null: new SimpleDateFormat("yyyy-MM-dd").format(createdDate);
         String edited= editedDate==null?null:new SimpleDateFormat("yyyy-MM-dd").format(editedDate);
 
+        List<ScheduleResponseDto> returnList = new ArrayList<>();
         List<Schedule> scheduleList= jdbcTemplate.query(sqlQuery, scheduleRowMapper(), id, plan, userId, created, edited);
         if (scheduleList.isEmpty()){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
-        return scheduleList;
+        for (Schedule s: scheduleList){
+            returnList.add(new ScheduleResponseDto(s, jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), s.getUserId()).get(0).getUserName()));
+        }
+        return returnList;
     }
 
+
+    // 유저 업데이트
+    // 비밀번호를 검사 후 일치할 경우에만 작업 수행
+    // 들어오는 파라미터에 따라 sql 쿼리 문자열을 만들어나감
+    // 완성된 쿼리를 jdbcTemplate 쿼리 메서드에 전달.
+    // 수정 완료후 수정된 수 만큼 index에 저장.
+    // index값 리턴.
     @Override
     public int updateUser(Long id, UserUpdateRequestDto dto) {
         User user= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0);
@@ -112,7 +140,9 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         if (dto.getUserMail() != null){index=jdbcTemplate.update("update user set USER_MAIL= ? , EDITED_DATE = ? where USER_ID= ?", dto.getUserMail(),now, id);}
         return index;
     }
-
+    
+    // 스케줄 업데이트
+    // 유저 업데이트와 같은 동작
     @Override
     public int updateSchedule(Long id, ScheduleUpdateRequestDto dto) {
         User user= jdbcTemplate.query("select * from user where USER_ID = (select USER_ID from schedule where ID= ?)", userRowMapper(), id).get(0);
@@ -125,6 +155,10 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return index;
     }
 
+    // 유저 삭제
+    // 비밀번호를 검사 후 일치할 경우에만 작업 수행
+    // 받은 userId 값에 해당하는 user를 테이블에서 찾아 삭제
+    // 반환값은 int. 삭제된 행의 숫자를 전달함.
     @Override
     public int deleteUser(Long id, UserCreateRequestDto dto) {
         String schedulePassword= jdbcTemplate.query("select * from user where USER_ID = ?", userRowMapper(), id).get(0).getPassword();
@@ -132,6 +166,9 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return jdbcTemplate.update("delete from user where USER_ID= ?", id);
     }
 
+    // 스케줄 삭제
+    // 비밀번호는 user 테이블을 참조함
+    // 나머지 동작은 유저 삭제와 동일
     @Override
     public int deleteSchedule(Long id, ScheduleCreateRequestDto dto) {
         String schedulePassword= jdbcTemplate.query("select * from user where USER_ID = (SELECT USER_ID from schedule where ID = ?)", userRowMapper(), id).get(0).getPassword();
@@ -139,6 +176,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         return jdbcTemplate.update("delete from schedule where id= ?", id);
     }
 
+    // 유저 sql 결과값을 RowMapper로 변환해 받음
     public RowMapper<User> userRowMapper(){
         return new RowMapper<User>() {
             @Override
@@ -148,6 +186,7 @@ public class ScheduleRepositortImp implements ScheduleRepository{
         };
     }
 
+    // 스케줄 sql 결과값을 RowMapper로 변환해 받음
     public RowMapper<Schedule> scheduleRowMapper(){
         return new RowMapper<Schedule>() {
             @Override
